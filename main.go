@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net"
 
 	invoicer "github.com/My-Golang-Projects/GRPC-Server-With-Go/invoicer/bufs/v1"
-	"github.com/prometheus/common/log"
+	"google.golang.org/grpc"
 )
 
 type Server struct {
@@ -23,18 +25,38 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
+	// defer ln.Close()
 
 	s.ln = ln
 
 	return nil
 }
 
+type myInvoicerServer struct {
+	invoicer.UnimplementedInvoicerServiceServer
+}
+
+func (s myInvoicerServer) Create(ctx context.Context, req *invoicer.CreateRequest) (*invoicer.CreateResponse, error) {
+	return &invoicer.CreateResponse{
+		Pdf:  []byte(req.From),
+		Docx: []byte("test"),
+	}, nil
+}
+
 func main() {
-	err := NewServer(":8080")
+	server := NewServer(":8080")
+	err := server.Start()
 	if err != nil {
 		log.Fatalf("cannot create listener: %s", err)
 	}
 
-	// invoicer.New
+	serverRegistrar := grpc.NewServer()
+	service := &myInvoicerServer{}
+
+	invoicer.RegisterInvoicerServiceServer(serverRegistrar, service)
+
+	err = serverRegistrar.Serve(server.ln)
+	if err != nil {
+		log.Fatalf("impossible to serve: %s", err)
+	}
 }

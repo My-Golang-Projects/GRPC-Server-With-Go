@@ -16,7 +16,7 @@ message CreateRequest {
 }
 
 message CreateResponse {
-  bytes pd = 1;
+  bytes pdf = 1;
   bytes docx = 2;
 }
 
